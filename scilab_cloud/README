@@ -1,0 +1,11 @@
+Prerequisites:
+1. python-mysqldb
+2. python-reportlab
+3. apache2, MySQL
+4. mod_wsgi (for hosting Django applications)
+5. Scilab-5.4.0+(Both scilab-cli and scilab-adv-cli must be in the path)
+
+
+
+
+
