@@ -11,7 +11,7 @@ $("#run-code").click(function(){
 		$.ajax({
 			type: "POST",
 			url: "http://127.0.0.1/cloud/scilab_evaluate",
-			data: { scilab_code: editorin.getValue(),graphicsmode:1,external_user:'guest' },
+			data: { scilab_code: editorin.getValue(),graphicsmode:'',external_user:'guest' },
             dataType:'json',
 			}).done(function( msg ) {
 				$("#run-code").html("Run")
