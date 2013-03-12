@@ -39,7 +39,7 @@ $("#scilab-run-code").live("click",function(){
 	$.post(
 
       "http://127.0.0.1/cloud/scilab_evaluate",
-      { scilab_code:scilabinput,graphicsmode:1,external_user:'guest' },
+      { scilab_code:scilabinput,graphicsmode:'',external_user:'guest' },
 
     function( msg ){
 
