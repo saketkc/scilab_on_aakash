@@ -5,6 +5,7 @@ from django.http import HttpResponse
 from django.shortcuts import render_to_response
 import MySQLdb as mdb
 import re
+import csv
 import os
 from reportlab.pdfgen import canvas
 import datetime
@@ -21,24 +22,21 @@ def scilab_instances(request,scilab_code):
 
 
 def default_view(request):
-	try:
-		user_id = request.session['user_id']
-	except:
-		return HttpResponseRedirect("/login")
-	all_books={}
-	books=[]
-	books_id=[]
-	con = mdb.connect("localhost","root","fedora13","textbook_companion")
-	with con:
-		cur = con.cursor()
-		query = "SELECT id,book,author FROM  textbook_companion_preference where approval_status=1 ORDER BY book ASC"
-		cur.execute(query)
-		rows = cur.fetchall()
-		for row in rows:
-			if row[1]!="" and row[2]!="":
-				all_books[row[0]]=row[1].replace("  "," ")+"(" + row[2].replace("  "," ")+")"
-	d_sorted_by_value = OrderedDict(sorted(all_books.items(), key=lambda x: x[1]))
-	return render_to_response('../public/default.html',{'input':'//Type Code Here','uid':user_id,'username':request.session['username'],'all_books':d_sorted_by_value})
+    try:
+        user_id = request.session['user_id']
+    except:
+        return HttpResponseRedirect("/login")
+    all_books={}
+    books=[]
+    books_id=[]
+    reader = csv.reader(open("/home/saket/Downloads/textbook_companion_preference.csv"),delimiter=',')
+
+    for row in reader:
+        if str(row[10])=="1":
+            all_books[row[0]]=row[3].replace("  "," ")+"("+row[4].replace("  "," ")+")"
+
+    d_sorted_by_value = OrderedDict(sorted(all_books.items(), key=lambda x: x[1]))
+    return render_to_response('../public/default.html',{'input':'//Type Code Here','uid':user_id,'username':request.session['username'],'all_books':d_sorted_by_value})
 @csrf_exempt
 def scilab_new_evaluate(request):
     if request.method =="GET":
@@ -100,66 +98,52 @@ def download(request,graphname):
         return response
 @csrf_exempt
 def get_chapters(request):
-	book_id = request.POST.get('id')
-	all_examples="<option value=''>Select a Chapter </option>"
-	con = mdb.connect("localhost","root","fedora13","textbook_companion")
-	with con:
-		cur = con.cursor()
-		query = "SELECT id,number,name FROM  textbook_companion_chapter where preference_id="+book_id+" ORDER BY number ASC"
-		cur.execute(query)
-		rows = cur.fetchall()
-		for row in rows:
-			if row[1]!="":
-				all_examples=all_examples+"<option value='"+str(row[0])+"'>"+str(row[1]).replace("  "," ")+". " + str(row[2]).replace("  "," ")+"</option>"
-	response_data={}
-	response_data["data"]=all_examples
-	return HttpResponse(json.dumps(response_data), mimetype="application/json")
+    book_id = request.POST.get('id')
+    all_examples="<option value=''>Select a Chapter </option>"
+    response_data={}
+    reader = csv.reader(open("/home/saket/Downloads/textbook_companion_chapter.csv"),delimiter=',')
+    for row in reader:
+        if row[2]!="" and str(row[1])==str(book_id):
+            all_examples=all_examples+"<option value='"+str(row[0])+"'>"+str(row[2]).replace("  "," ")+". " + str(row[3]).replace("  "," ")+"</option>"
+    response_data["data"]=all_examples
+    return HttpResponse(json.dumps(response_data), mimetype="application/json")
 
 
 @csrf_exempt
 def get_examples(request):
-	book_id = request.POST.get('id')
-	all_examples="<option value=''>Select an Example</option>"
-	con = mdb.connect("localhost","root","fedora13","textbook_companion")
-	with con:
-		cur = con.cursor()
-		query = "SELECT id,number,caption FROM  textbook_companion_example where chapter_id="+book_id+" ORDER BY number ASC"
-		cur.execute(query)
-		rows = cur.fetchall()
-		for row in rows:
-			if row[1]!="":
-				all_examples=all_examples+"<option value='"+str(row[1])+"'>"+str(row[1]).replace("  "," ")+". " + str(row[2]).replace("  "," ")+"</option>"
-	response_data={}
-	response_data["data"]=all_examples
-	return HttpResponse(json.dumps(response_data), mimetype="application/json")
+    book_id = request.POST.get('id')
+    all_examples="<option value=''>Select an Example</option>"
+    response_data={}
+    reader = csv.reader(open("/home/saket/Downloads/textbook_companion_example.csv"),delimiter=',')
+    for row in reader:
+        if row[3]!="" and str(row[1])==str(book_id):
+            all_examples=all_examples+"<option value='"+str(row[3])+"'>"+str(row[3]).replace("  "," ")+". " + str(row[4]).replace("  "," ")+"</option>"
+    response_data["data"]=all_examples
+    return HttpResponse(json.dumps(response_data), mimetype="application/json")
 
 @csrf_exempt
 def get_code(request):
-	example = request.POST.get('example')
-	chapter = "CH"+example.split(".")[0]
-	folder = request.POST.get('folder')
-	content=""
-	con = mdb.connect("localhost","root","fedora13","textbook_companion")
-	with con:
-		cur = con.cursor()
-		query = "SELECT filepath FROM textbook_companion_dependency_files where preference_id="+folder
-		cur.execute(query)
-		rows = cur.fetchall()
-		for row in rows:
-			f=open("/home/saket/SANDBOX/scilab_cloud/textbook_companion/uploads/"+row[0],'r')
-
-			content+=f.read()+"\n";
-			print query
-			f.close()
-		os.chdir("/home/saket/SANDBOX/scilab_cloud/textbook_companion/uploads/"+folder+"/"+chapter+"/"+"EX"+example+"/")
-		for files in os.listdir("."):
-			if files.endswith(".sce") or files.endswith(".sci"):
-				f=open(files,'r')
-				content += f.read()
-				f.close()
-	response_data={}
-	response_data["input"]=content
-	return HttpResponse(json.dumps(response_data), mimetype="application/json")
+    example = request.POST.get('example')
+    chapter = "CH"+example.split(".")[0]
+    folder = request.POST.get('folder')
+    content=""
+    reader = csv.reader(open("/home/saket/Downloads/textbook_companion_dependency_files.csv"),delimiter=',')
+    """
+    for row in reader:
+        if str(row[0])==str(folder):
+            f=open("/home/saket/SANDBOX/scilab_cloud/textbook_companion/uploads/"+row[3],'r')
+            content+=f.read()+"\n";
+            f.close()
+    """
+    os.chdir("/home/saket/SANDBOX/scilab_cloud/textbook_companion/uploads/"+folder+"/"+chapter+"/"+"EX"+example+"/")
+    for files in os.listdir("."):
+        if files.endswith(".sce") or files.endswith(".sci"):
+            f=open(files,'r')
+            content += f.read()
+            f.close()
+    response_data={}
+    response_data["input"]=content
+    return HttpResponse(json.dumps(response_data), mimetype="application/json")
 
 
 
