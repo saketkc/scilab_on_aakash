@@ -143,3 +143,4 @@ LOGGING = {
 }
 
 GRAPH_ROOT="/home/saket/SANDBOX/scilab_cloud/"#APPEND_SLASH=False
+GRAPHS_ROOT="/home/saket/SANDBOX/scilab_cloud/graphs/"#APPEND_SLASH=False
